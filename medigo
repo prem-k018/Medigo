@@ -1,0 +1,39 @@
+#!/bin/bash
+
+
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Prem018@"
+DB_NAME="office"
+
+
+function Medigo () {
+
+
+choice=$(zenity --list --title="Welcome to MEDIGO" --text="Login to your Respective Portal" --column="Portals" 'USER PORTAL' 'SELLER PORTAL' 'ADMIN PORTAL' 'EXIT' --width=600 --height=400)
+
+
+case $choice in
+
+    'USER PORTAL') source user_login ;;
+
+    'SELLER PORTAL') source seller_login ;;
+
+    'ADMIN PORTAL') source admin_login ;;
+
+    EXIT) exit ;;
+
+    *) 
+	 zenity --info --title="Welcome to MEDIGO" --error "Invalid Choice. Please Try Again!" --width=100 --height=50
+
+esac
+if [ $? -ne 0 ]; then
+  	    zenity --info --title="MEDIGO" --text="Thank you for visting Medigo" --height=100 --width=300
+  	    exit 1
+fi
+
+}
+Medigo
+
+

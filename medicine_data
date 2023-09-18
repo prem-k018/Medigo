@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#curl -X GET "https://api.fda.gov/drug/label.json?search=&limit=100&skip=0&fields=openfda.brand_name,openfda.generic_name,openfda.route,openfda.substance_name,openfda.manufacturer_name,openfda.product_ndc,openfda.spl_id,openfda.package_ndc,openfda.unii,openfda.pharm_class_epc,openfda.pharm_class_moa,openfda.pharm_class_cs,openfda.pharm_class_pe,openfda.pharm_class_mechanism_of_action,pricing" -H "Accept: application/json" -H "Content-Type: application/json" -H "Authorization: XrcqncTFBKuFL2EUUAEgLSSwQbkFQ8zOc2bhY0Lg"
+
+#curl -H "Authorization: XrcqncTFBKuFL2eUUAEgLSSwQbkFQ8zOc2bhY0Lg" "https://api.fda.gov/drug/event.json?limit=100&skip=0"
+
+#curl -H "Authorization: XrcqncTFBKuFL2eUUAEgLSSwQbkFQ8zOc2bhY0Lg" "https://api.fda.gov/drug/label.json?search=generic_name:LETAIRIS"
+
+
+data=$(curl -H "Authorization: XrcqncTFBKuFL2eUUAEgLSSwQbkFQ8zOc2bhY0Lg" "https://api.fda.gov/drug/event.json?limit=10&skip=0")
+
+#curl -H "Authorization: XrcqncTFBKuFL2eUUAEgLSSwQbkFQ8zOc2bhY0Lg" "https://api.fda.gov/drug/label.json?search=generic_name:LETAIRIS"
+
+echo $data | jq -r '.results[0].patient.drug[0].openfda'

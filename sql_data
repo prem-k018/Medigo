@@ -1,0 +1,246 @@
+
+
+root=fullmahol420@egmail.com
+mailhub=smtp.gmail.com:587
+FromLineOverride=YES
+AuthUser=fullmahol420@gmail.com
+AuthPass=zimpxlivnqslvepd
+UseSTARTTLS=YES
+
+
+tabel =user_credentials
+attributres= user_name, password, email, phone_number, hashed_password
+
+user_order
+attributes=user_name, order_id, medicine_name, quantity, amount, total_price
+
+table=user_info
+attributes=user_name, email, phone_number, street_address, district, state, pincode
+
+
+
+CREATE TABLE user_credentials (
+    user_name VARCHAR(50),
+    phone_number VARCHAR(10),
+    email VARCHAR(50),
+    password VARCHAR(200),
+    hashed_password VARCHAR(200)
+); 
+
+CREATE TABLE users (
+    user_name VARCHAR(50),
+    gender VARCHAR(20),
+    phone_number VARCHAR(10),
+    email VARCHAR(50)
+); 
+
+
+ALTER TABLE users
+ADD COLUMN address_line1 VARCHAR(255),
+ADD COLUMN address_line2 VARCHAR(255),
+ADD COLUMN pincode VARCHAR(10),
+ADD COLUMN city VARCHAR(50),
+ADD COLUMN state VARCHAR(50);
+
+
+CREATE TABLE medicines(
+  medicine_name VARCHAR(255),
+  price VARCHAR(100),
+  manufacture_date DATE,
+  expired_date DATE,
+  stock VARCHAR(100)
+);
+
+
+create table cart (
+  email varchar(500),
+  medicine_name varchar(100),
+  price varchar(100),
+  manufacture_date date,
+  expiry_date date,
+  stock varchar(50)
+);
+
+
+create table order_history (
+  email varchar(50),
+  order_id varchar(200),
+  medicine_name varchar(200),
+  quantity varchar(200),
+  total_price varchar(200)
+);
+
+
+CREATE TABLE admin_credentials (
+    admin_name VARCHAR(50),
+    phone_number VARCHAR(10),
+    email VARCHAR(50),
+    password VARCHAR(200)
+);
+
+
+INSERT INTO admin_credentials(admin_name,phone_number,email,password) VALUES
+('Prem Kumar', '9142637980', 'premumar018@gmail.com', 'prem1'),
+('Jagmohan Mehta', '8000373916', 'mehta00420@gmail.com', 'jagmohan'),
+('Arabindaskha Mishra', '8456856040', 'mishraarabinda02@gmail.com', 'arbind');   
+ 
+
+ 
+
+
+-- insert data 
+INSERT INTO medicines(medicine_name,price,manufacture_date,expiry_date,stock)
+VALUES
+('Lipitor','50','2023-01-02','2024-02-10','100'),
+('Metformin','45','2023-02-18','2026-03-11','100'),
+('Zoloft','12','2023-04-04','2024-09-20','100'),
+('Plavix','16','2023-03-14','2027-10-10','100'),
+('Prilosec','50','2023-01-01','2025-12-22','100'),
+('Xanax','30','2023-04-23','2025-01-01','100'),
+('ventolin','14','2023-10-15','2026-06-05','100'),
+('Synthroid','56','2023-07-20','2027-09-25','100'),
+('Nexium','22','2023-03-05','2025-11-15','100'),
+('Adderall','45','2023-03-02','2024-10-05','100'),
+('Vicodin','34','2023-04-05','2026-12-02','100'),
+('Celebrex','65','2023-01-12','2026-05-11','100'),
+('Prozac','98','2023-04-06','2026-10-07','100'),
+('Cipro','45','2023-07-29','2026-04-23','100'),
+('Advair','45','2023-03-12','2024-09-29','100'),
+('Xarelto','10','2023-12-10','2026-07-26','100'),
+('Humira','30','2023-09-18','2024-10-14','100'),
+('Metformin','45','2023-05-19','2025-03-17','100'),
+('Prozac','65','2023-12-08','2025-10-12','100'),
+('Zantac','34','2023-04-20','2025-10-09','100'),
+('Lipitor','50','2023-01-02','2024-02-10','100'),
+('Metformin','63','2023-02-18','2026-03-11','100'),
+('Zoloft','10','2023-04-04','2024-09-20','100'),
+('Plavix','100','2023-03-14','2027-10-10','100'),
+('Prilosec','50','2023-01-01','2025-12-22','100'),
+('Xanax','30','2023-04-23','2025-01-01','100'),
+('ventolin','14','2023-10-15','2026-06-05','100'),
+('Synthroid','70','2023-07-20','2027-09-25','100'),
+('Nexium','28','2023-03-05','2025-11-15','100'),
+('Adderall','92','2023-03-02','2024-10-05','100'),
+('Vicodin','38','2023-04-05','2026-12-02','100'),
+('Celebrex','74','2023-01-12','2026-05-11','100'),
+('Prozac','03','2023-04-06','2026-10-07','100'),
+('Cipro','62','2023-07-29','2026-04-23','100'),
+('Advair','82','2023-03-12','2024-09-29','100'),
+('Xarelto','10','2023-12-10','2026-07-26','100'),
+('Humira','45','2023-09-18','2024-10-14','100'),
+('Metformin','40','2023-05-19','2025-03-17','100'),
+('Prozac','65','2023-12-08','2025-10-12','100'),
+('Zantac','34','2023-04-20','2025-10-09','100'),
+('Acetaminophen','54','2023-01-23','2027-01-27','100'),
+('Ibuprofen','29','2023-04-13','2026-02-02','100'),
+('Aspirin','94','2023-03-09','2026-02-02','100'),
+('Omeprazole','43','2020-01-01','2026-12-13','100'),
+('Metformin','93','2023-05-23','2026-07-09','100'),
+('Simvastatin','83','2023-02-01','2027-12-03','100'),
+('Amoxicillin','93','2023-11-07','2028-01-25','100'),
+('Prednisone','45','2023-05-23','2028-01-25','100'),
+('Albuterol','21','2023-09-09','2025-10-26','100'),
+('Sertraline','93','2023-04-12','2028-04-03','100'),
+('Cetirizine','32','2023-08-08','2025-08-07','100'),
+('Losartan','91','2023-02-25','2030-05-15','100'),
+('Atorvastatin','89','2023-08-18','2026-12-07','100'),
+('Gabapentin','14','2023-10-10','2028-09-20','100'),
+('Metoprolol','38','2023-10-20','2028-04-23','100'),
+('Fluoxetine','47','2023-10-05','2024-04-23','100'),
+('Escitalopram','28','2023-05-23','2028-01-25','100'),
+('Hydrochlorothiazide','43','2023-03-09','2027-11-14','100'),
+('Warfarin','47','2023-02-01','2027-12-03','100'),
+('Metronidazole','72','2023-11-23','2027-01-21','100'),
+('Levothyroxine','53','2023-03-09','2030-10-24','100'),
+('Pantoprazole','45','2023-02-25','2030-05-15','100'),
+('Loratadine','28','2023-05-23','2026-07-09','100'),
+('Clonazepam','93','2023-10-10','2028-09-20','100'),
+('Amlodipine','48','2023-07-21','2027-12-30','100'),
+('Bupropion','38','2023-10-20','2030-03-15','100'),
+('Ciprofloxacin','50','2023-12-06','2025-07-15','100'),
+('Duloxetine','32','2023-11-07','2028-07-06','100');
+
+
+INSERT INTO medicines(medicine_name,price,manufacture_date,expiry_date,description,stock)
+VALUES
+('Lipitor','50','2023-01-02','2024-02-10','Lipitor is a statin medication used to lower cholesterol levels.','100'),
+('Metformin','45','2023-02-18','2026-03-11','Metformin is an oral medication used to treat type 2 diabetes by reducing blood sugar levels.','100'),
+('Zoloft','12','2023-04-04','2024-09-20','Zoloft(sertraline)-is an antidepressant medication used to treat major depressive disorderpanic disorder, and social anxiety disorder.','100'),
+('Plavix','16','2023-03-14','2027-10-10','Plavix (clopidogrel) is a medication used to reducethe risk of heart attacks and strokes by preventing blood clots from forming.','100'),
+('Prilosec','50','2023-01-01','2025-12-22','Prilosec (omeprazole) - is a medication used to treat gastroesophageal reflux disease (GERD) and other stomach acid-related conditions.','100'),
+('Xanax','30','2023-04-23','2025-01-01','Xanax (alprazolam) is a medication used to treat anxiety and panic disorders.','100'),
+('ventolin','14','2023-10-15','2026-06-05','Ventolin (albuterol) is an inhaler medication used to treat asthma and other respiratory conditions.','100'),
+('Synthroid','56','2023-07-20','2027-09-25','Synthroid (levothyroxine) is a medication used to treat an underactive thyroid gland.','100'),
+('Nexium','22','2023-03-05','2025-11-15','Nexium (esomeprazole) is a medication used to treat GERD and other stomach acidrelated conditions.','100'),
+('Adderall','45','2023-03-02','2024-10-05','Adderall (amphetamine and dextroamphetamine) - is a medication used to treat attention deficit hyperactivity disorder and narcolepsy.','100'),
+('Vicodin','34','2023-04-05','2026-12-02','Vicodin (hydrocodone and acetaminophen) - is a pain medication used to treat moderate to severe pain.','100'),
+('Celebrex','65','2023-01-12','2026-05-11','Celebrex (celecoxib) - is a medication used to treat pain and inflammation caused by conditions such as arthritis.','100'),
+('Prozac','98','2023-04-06','2026-10-07','Prozac (fluoxetine)- is an antidepressant medication used to treat major depressive disorder, x and obsessive-compulsive disorder.','100'),
+('Cipro','45','2023-07-29','2026-04-23','Cipro (ciprofloxacin) - is an antibiotic medication used to treat bacterial infections.','100'),
+('Advair','45','2023-03-12','2024-09-29','Advair (fluticasone and salmeterol) - is an inhaler medication used to treat asthma and chronic obstructive pulmonary disease (COPD).','100'),
+('Xarelto','10','2023-12-10','2026-07-26','Xarelto (rivaroxaban) is an anticoagulant medication that helps prevent the formation of blood clots.','100'),
+('Humira','30','2023-09-18','2024-10-14',' Humira (adalimumab) is an immunosuppressant medication that is used to treat autoimmune diseases like rheumatoid arthritis and psoriasis','100'),
+('Metformin','45','2023-05-19','2025-03-17','Metformin (Glucophage) is an oral antidiabetic agent used to treat type 2 diabetes.','100'),
+('Prozac','65','2023-12-08','2025-10-12','Prozac (fluoxetine) is a selective serotonin reuptake inhibitor antidepressant used to treat depression, and certain types of eating disorders.','100'),
+('Zantac','34','2023-04-20','2025-10-09','Zantac (ranitidine) is an H2 blocker medication used to treat ulcers and acid reflux.','100'),
+('Lipitor','50','2023-01-02','2024-02-10','Lipitor is a statin medication used to lower cholesterol levels.','100'),
+('Metformin','63','2023-02-18','2026-03-11','Metformin is an oral medication used to treat type 2 diabetes by reducing blood sugar levels.','100'),
+('Zoloft','10','2023-04-04','2024-09-20','Zoloft(sertraline)-is an antidepressant medication used to treat major depressive disorderpanic disorder','100'),
+('Plavix','100','2023-03-14','2027-10-10','Plavix (clopidogrel) - is a medication used to reducethe risk of heart attacks and strokes by preventing blood clots from forming.','100'),
+('Prilosec','50','2023-01-01','2025-12-22','Prilosec (omeprazole) - is a medication used to treat gastroesophageal reflux disease (GERD) and other stomach acid-related conditions.','100'),
+('Xanax','30','2023-04-23','2025-01-01','Xanax (alprazolam) - is a medication used to treat anxiety and panic disorders.','100'),
+('ventolin','14','2023-10-15','2026-06-05','Ventolin (albuterol) - is an inhaler medication used to treat asthma and other respiratory conditions.','100'),
+('Synthroid','70','2023-07-20','2027-09-25','Synthroid (levothyroxine) - is a medication used to treat an underactive thyroid gland.','100'),
+('Nexium','28','2023-03-05','2025-11-15','Nexium (esomeprazole) - is a medication used to treat GERD and other stomach acid-related conditions.','100'),
+('Adderall','92','2023-03-02','2024-10-05','Adderall (amphetamine and dextroamphetamine) - is a medication used to treat attention deficit hyperactivity disorder (ADHD) and narcolepsy.','100'),
+('Vicodin','38','2023-04-05','2026-12-02','Vicodin (hydrocodone and acetaminophen) - is a pain medication used to treat moderate to severe pain.','100'),
+('Celebrex','74','2023-01-12','2026-05-11','Celebrex (celecoxib) - is a medication used to treat pain and inflammation caused by conditions such as arthritis.','100'),
+('Prozac','03','2023-04-06','2026-10-07','Prozac (fluoxetine) - is an antidepressant medication used to treat major depressive disorder, bulimia nervosa.','100'),
+('Cipro','62','2023-07-29','2026-04-23','Cipro (ciprofloxacin) - is an antibiotic medication used to treat bacterial infections.','100'),
+('Advair','82','2023-03-12','2024-09-29','Advair (fluticasone and salmeterol) - is an inhaler medication used to treat asthma and chronic obstructive pulmonary disease (COPD).','100'),
+('Xarelto','10','2023-12-10','2026-07-26','Xarelto (rivaroxaban) is an anticoagulant medication that helps prevent the formation of blood clots. ','100'),
+('Humira','45','2023-09-18','2024-10-14',' Humira (adalimumab) is an immunosuppressant medication that is used to treat autoimmune diseases like rheumatoid','100'),
+('Metformin','40','2023-05-19','2025-03-17','Metformin (Glucophage) is an oral antidiabetic agent used to treat type 2 diabetes.','100'),
+('Prozac','65','2023-12-08','2025-10-12','Prozac (fluoxetine) is a selective serotonin reuptake inhibitor (SSRI) ','100'),
+('Zantac','34','2023-04-20','2025-10-09','Zantac (ranitidine) is an H2 blocker medication used to treat ulcers and acid reflux.','100'),
+('Acetaminophen','54','2023-01-23','2027-01-27','An antidepressant medication belonging to the serotonin-norepinephrine reuptake inhibitor (SNRI) ','100'),
+('Ibuprofen','29','2023-04-13','2026-02-02','A potent opioid analgesic used for the management of severe pain, such as after surgery or in advanced stages of cancer.','100'),
+('Aspirin','94','2023-03-09','2026-02-02','A medication used to relieve pain, reduce inflammation, and prevent blood clotting','100'),
+('Omeprazole','43','2020-01-01','2026-12-13','A proton pump inhibitor (PPI) used to reduce stomach acid production and treat acid reflux and ulcers.','100'),
+('Metformin','93','2023-05-23','2026-07-09','An oral medication used to manage and control blood sugar levels in individuals with type 2 diabetes.','100'),
+('Simvastatin','83','2023-02-01','2027-12-03','A statin medication used to lower cholesterol levels and reduce the risk of cardiovascular diseases.','100'),
+('Amoxicillin','93','2023-11-07','2028-01-25','An antibiotic used to treat various bacterial infections, including respiratory, ear, and urinary tract infections','100'),
+('Prednisone','45','2023-05-23','2028-01-25','A corticosteroid used to suppress the immune system and reduce inflammation in conditions like asthma and allergies.','100'),
+('Albuterol','21','2023-09-09','2025-10-26','A bronchodilator used to relieve symptoms of asthma and other respiratory conditions','100'),
+('Sertraline','93','2023-04-12','2028-04-03','An antidepressant medication belonging to the selective serotonin reuptake inhibitor (SSRI) class.','100'),
+('Cetirizine','32','2023-08-08','2025-08-07','An antihistamine used to relieve symptoms of allergies, such as sneezing, itching, and runny nose','100'),
+('Losartan','91','2023-02-25','2030-05-15','An angiotensin II receptor blocker (ARB) used to treat high blood pressure and prevent kidney damage in diabetes','100'),
+('Atorvastatin','89','2023-08-18','2026-12-07','A statin medication used to lower cholesterol levels and reduce the risk of cardiovascular diseases','100'),
+('Gabapentin','14','2023-10-10','2028-09-20','An anticonvulsant medication used to control seizures and manage nerve pain','100'),
+('Metoprolol','38','2023-10-20','2028-04-23','A beta-blocker used to treat high blood pressure, angina, and prevent heart attacks','100'),
+('Fluoxetine','47','2023-10-05','2024-04-23','An antidepressant medication belonging to the SSRI class, used to treat depression, anxiety, and other mental disorders','100'),
+('Escitalopram','28','2023-05-23','2028-01-25','An antidepressant medication belonging to the SSRI class, used to treat depression and anxiety disorders','100'),
+('Hydrochlorothiazide','43','2023-03-09','2027-11-14','A diuretic medication used to treat high blood pressure and reduce fluid retention','100'),
+('Warfarin','47','2023-02-01','2027-12-03','An anticoagulant medication used to prevent blood clots and reduce the risk of stroke and heart attack','100'),
+('Metronidazole','72','2023-11-23','2027-01-21','An antibiotic used to treat various bacterial and parasitic infections, including dental and gastrointestinal infections','100'),
+('Levothyroxine','53','2023-03-09','2030-10-24','A synthetic thyroid hormone used to treat hypothyroidism and manage certain types of thyroid cancer','100'),
+('Pantoprazole','45','2023-02-25','2030-05-15','A proton pump inhibitor (PPI) used to reduce stomach acid production and treat conditions like gastroesophageal reflux disease (GERD)','100'),
+('Loratadine','28','2023-05-23','2026-07-09','An antihistamine used to relieve symptoms of seasonal allergies, such as sneezing, itching, and watery eyes','100'),
+('Clonazepam','93','2023-10-10','2028-09-20','An anti-anxiety medication and anticonvulsant used to treat panic disorder and certain types of seizures','100'),
+('Amlodipine','48','2023-07-21','2027-12-30','A calcium channel blocker used to treat high blood pressure and prevent chest pain (angina)','100'),
+('Bupropion','38','2023-10-20','2030-03-15','An antidepressant medication used to treat depression and aid smoking cessation','100'),
+('Ciprofloxacin','50','2023-12-06','2025-07-15','An antibiotic used to treat various bacterial infections, including urinary tract infections and certain types of pneumonia','100'),
+('Duloxetine','32','2023-11-07','2028-07-06','An antidepressant medication belonging to the serotonin-norepinephrine reuptake inhibitor (SNRI)','100');
+
+
+
+
+
+
+
+
+
+
+
+
+

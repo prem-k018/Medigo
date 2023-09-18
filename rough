@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Root@123"
+DB_NAME="medigo"
+
+
+selected_med=$(zenity --forms --title="ADD MEDICINE" --text="Please enter your information:" \
+        --add-entry="Enter the Medicine Name" \
+        --add-entry="Select the Medicine Price" \
+        --add-calendar=" Enter your Manufacture Date" \
+        --add-calendar="Enter your Expiry Date" \
+        --add-combo="Enter the no of Stock" --combo-values="10|20|30|40|50|60|70" --height=400 --width=600)
+        
+med_name=$(echo "$selected_med" | awk '{print $1}')
+  med_price=$(echo "$selected_med" | awk '{print $2}')
+  med_mnf=$(echo "$selected_med" | awk '{print $3}')
+  med_expiry=$(echo "$selected_med" | awk '{print $4}')
+  med_stock=$(echo "$selected_med" | awk '{print $5}')
+  
+        
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e"INSERT INTO medicines (medicine_name, price, manufacture_date, expiry_date, stock) VALUES ('$med_name', '$med_price', '$med_mnf', '$med_expiry', '$med_stock');"
+
+#mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e"UPDATE medicines SET stock = stock - $quantity where medicine_name = '$med_name'"

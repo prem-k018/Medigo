@@ -1,0 +1,335 @@
+#!/bin/bash
+
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#!/bin/bash
+#result=$(zenity --list --title="Login or Register?" --text="Select an option" --radiolist --column "Select" --column "Option" TRUE Login FALSE Register)
+#result=$(zenity --list --title="Login or Register?" --text="Select an option" --radiolist --column "Select" --column "Option" TRUE Login FALSE Register)
+#result=$(zenity --forms --title="Login or Register?" --text="Select an option" --add-combo="Option:" --combo-values="Login|Register" --add-entry="Login Description:" --add-entry="Register Description:")
+#zenity --forms --title="Login or Register?" --text="Select an option" --add-combo="Option:" --combo-values="Login|Register" --window-icon="info"
+#!/bin/bash
+
+# Display a list of options
+#result=$(zenity --list --title="Select an option" --column="Option" One Two Three Four Five --width=400 --height=500)
+
+# Display the selected option
+#zenity --info --title="Selection" --text="You selected $result"
+#zenity --forms --title="Login or Register?" --text="Select an option" --add-combo="Option:" --combo-values="Login|Register" --css="label {font-size: 14px; font-weight: bold;}"
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Prem018@"
+DB_NAME="medigo"
+
+#curl -H "Authorization: XrcqncTFBKuFL2eUUAEgLSSwQbkFQ8zOc2bhY0Lg" "https://api.fda.gov/drug/event.json?limit=100&skip=0"
+
+#curl -H "Authorization: XrcqncTFBKuFL2eUUAEgLSSwQbkFQ8zOc2bhY0Lg" "https://api.fda.gov/drug/label.json?search=generic_name:LETAIRIS"
+
+#curl -s -H "Authorization: YOUR_API_KEY" "https://api.fda.gov/drug/label.json?search=generic_name:aspirin" | jq -r '.results[] | "\(.openfda.brand_name[0]),\(.openfda.manufacturer_name[0]),\(.openfda.expiration_date[0])"'
+
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#Search medicine
+
+# Prompt the user to enter a medicine name
+medicine=$(zenity --entry --title "Search Medicine" --text "Enter the medicine name:")
+
+# Search for the medicine in the database
+query="SELECT medicine_name, price, manufacture_date, expiry_date, description, stock FROM medicines WHERE medicine_name LIKE '%$medicine%'"
+result=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "$query")
+
+
+# Display the search result to the user
+if [ -z "$result" ]; then
+    zenity --info --text "No results found for '$medicine'"
+else
+selected_med=$(echo "$result" | zenity --list --column="Medicine" --title="Select Medicine" --text="Select a medicine:" --height=500 --width=700)
+
+# If the user selected a medicine, show its details and add it to the cart
+if [ -n "$selected_med" ]; then
+  med_name=$(echo "$selected_med" | awk '{print $1}')
+  med_price=$(echo "$selected_med" | awk '{print $2}')
+  med_mnf=$(echo "$selected_med" | awk '{print $3}')
+  med_expiry=$(echo "$selected_med" | awk '{print $4}')
+  med_desc=$(echo "$selected_med" | awk '{print $5}')
+  med_stock=$(echo "$selected_med" | awk '{print $6}')
+
+  add_to_cart=$(zenity --question --title="Add to Cart" --text="Do you want to Add '$med_name' to cart for $med_price?" --width=250)
+  # Check if user clicked "Yes"
+  if [ $? = 0 ]; then
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "INSERT INTO cart (medicine_name, price, manufacture_date, expiry_date, description, stock) VALUES ('$med_name', '$med_price', '$med_mnf', '$med_expiry', '$med_desc', '$med_stock');"
+    zenity --info --title="Added to Cart" --text="'$med_name' added to cart."
+  fi
+fi
+fi
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#!/bin/bash
+
+# Set the API endpoint URL
+url="https://example-api.com/medicines"
+
+# Set the authorization header if required
+authorization="Authorization: Bearer YOUR_ACCESS_TOKEN"
+
+# Make the API request and extract the response JSON
+response=$(curl -s -H "$authorization" "$url")
+data=$(echo "$response" | jq '.[]')
+
+# Loop through each medicine in the response data and extract the details
+while read -r medicine; do
+    medicine_name=$(echo "$medicine" | jq -r '.medicine_name')
+    brand_name=$(echo "$medicine" | jq -r '.brand_name')
+    manufacturer_name=$(echo "$medicine" | jq -r '.manufacturer_name')
+    expiry_date=$(echo "$medicine" | jq -r '.expiry_date')
+
+    # Print out the extracted details for each medicine
+    echo "Medicine Name: $medicine_name"
+    echo "Brand Name: $brand_name"
+    echo "Manufacturer Name: $manufacturer_name"
+    echo "Expiry Date: $expiry_date"
+done <<< "$data"
+
+#---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Go to cart
+
+#!/bin/bash
+
+# Connect to the MySQL database
+DB_NAME="your_db_name"
+DB_USER="your_db_user"
+DB_PASSWORD="your_db_password"
+DB_HOST="localhost"
+
+# Get the list of medicines in the cart from the database
+cart_med_list=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "SELECT name, price, description FROM cart;")
+
+# Show a dialog with the list of medicines in the cart and allow the user to select one
+selected_med=$(echo "$cart_med_list" | zenity --list --column="Medicine" --column="Price" --column="Description" --title="Cart" --text="Select a medicine from cart:" --height=400)
+
+# If the user selected a medicine, ask for the quantity and calculate the price
+if [ -n "$selected_med" ]; then
+  med_name=$(echo "$selected_med" | awk '{print $1}')
+  med_price=$(echo "$selected_med" | awk '{print $2}')
+  med_desc=$(echo "$selected_med" | awk '{print $3}')
+  quantity=$(zenity --entry --title="Quantity" --text="Enter quantity for '$med_name':" --entry-text="1")
+
+  # Calculate the total price based on the quantity
+  total_price=$(echo "$med_price * $quantity" | bc)
+
+  order_msg="You are about to order:\n\nMedicine: $med_name\nQuantity: $quantity\nPrice: $total_price\n\nDo you want to place the order?"
+  place_order=$(zenity --question --title="Place Order" --text="$order_msg" --width=250)
+
+  # If the user confirms the order, generate an order ID, insert the order details into the "order history" table in the database, and show a confirmation message
+  if [ "$place_order" = "yes" ]; then
+    # Generate an order ID using the current date and time
+    order_id=$(date +%Y%m%d%H%M%S)
+
+    # Insert the order details into the "order history" table in the database
+    mysql -u "$DB_USER" -p"$DB_PASSWORD" -h "$DB_HOST" "$DB_NAME" -e "INSERT INTO order_history (order_id, medicine_name, quantity, total_price) VALUES ('$order_id', '$med_name', '$quantity', '$total_price');"
+
+    # Remove the medicine from the cart
+    mysql -u "$DB_USER" -p"$DB_PASSWORD" -h "$DB_HOST" "$DB_NAME" -e "DELETE FROM cart WHERE name='$med_name';"
+
+    zenity --info --title="Order Placed" --text="Order placed for '$med_name' (Quantity: $quantity, Price: $total_price).\nOrder ID: $order_id"
+  fi
+fi
+
+
+#----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+# Define the database connection details
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="password"
+DB_NAME="medicine_db"
+
+# Prompt the user to enter a medicine name
+medicine=$(zenity --entry --title "Search Medicine" --text "Enter the medicine name:")
+
+# Search for the medicine in the database
+query="SELECT * FROM medicines WHERE name LIKE '%$medicine%'"
+result=$(mysql -h $DB_HOST -u $DB_USER -p$DB_PASS -D $DB_NAME -se "$query")
+
+# Display the search result to the user
+if [ -z "$result" ]; then
+    zenity --info --text "No results found for '$medicine'"
+else
+    selection=$(echo "$result" | zenity --list --title "Select Medicine" --text "Select a medicine to add to cart:" --column "ID" --column "Name" --column "Price" --column "Stock" --multiple --separator=",")
+    if [ -n "$selection" ]; then
+        # Add the selected medicine to the cart table
+        IFS=',' read -r -a selected_medicines <<< "$selection"
+        for medicine in "${selected_medicines[@]}"; do
+            id=$(echo "$medicine" | awk '{print $1}')
+            name=$(echo "$medicine" | awk '{print $2}')
+            price=$(echo "$medicine" | awk '{print $3}')
+            stock=$(echo "$medicine" | awk '{print $4}')
+            query="INSERT INTO cart (medicine_id, name, price) VALUES ('$id', '$name', '$price')"
+            mysql -h $DB_HOST -u $DB_USER -p$DB_PASS -D $DB_NAME -e "$query"
+            zenity --info --text "$name added to cart"
+        done
+    fi
+fi
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#!/bin/bash
+
+# Set your API key
+API_KEY="<your_api_key>"
+
+# Set the endpoint URL
+ENDPOINT="https://api.goodrx.com"
+
+# Set the endpoint path and parameters
+ENDPOINT_PATH="/compare-price-quotes"
+PARAMS="lat=37.7749&lng=-122.4194&location_name=San%20Francisco%2C%20California%2C%20United%20States&mg_id=&num_rows=100&show_all_drugs=1"
+
+# Make the API call and get the response data
+response=$(curl -s "${ENDPOINT}${ENDPOINT_PATH}?${PARAMS}" \
+-H "Authorization: Token token=${API_KEY}" \
+-H "Content-Type: application/json")
+
+# Parse the response data and extract medicine name, price, and description
+medicine_data=$(echo "${response}" | jq -r '.data[] | [.drug_name, .price, .description] | @csv')
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#!/bin/bash
+
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Prem018@"
+DB_NAME="medigo"
+
+email='premumar018@gmail.com'
+
+
+# Function to display the table data using Zenity
+display_table_data() {
+    # Modify this function to fetch and display data from your table
+    table_data=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT * FROM users WHERE email='$email'")
+    
+    #zenity --info --title="Table Data" --text="$account" --ok-label="Add Address" --cancel-label="Cancel" --width=500 --height=300
+    
+    #zenity --text-info --title="Table Data" --width=500 --height=300 --editable --extra-button="Add Address" --ok-label="OK" --cancel-label="Cancel"
+    
+    # Display the table data along with the "Add Address" button
+    #zenity --text-info --title="Table Data" --width=500 --height=300 --editable --filename=- --extra-button="Add Address" <<< "$table_data"
+    
+    # Display the table data using Zenity's text-info dialog
+    table_output=$(zenity --text-info --title="Table Data" --width=500 --height=300 --editable --filename=- <<< "$table_data")
+    button_clicked=$?
+
+    # Check if the "Add Address" button was clicked
+    if [ $button_clicked -eq 2 ]; then
+        # User clicked the "Add Address" button
+        add_address_to_table
+    fi
+}
+
+
+
+# Function to prompt user for address details and add the address to the table
+add_address_to_table() {
+    # Prompt the user to enter the address using Zenity entry form
+    form_data=$(zenity --forms --title="Add Address" \
+        --text="Please enter the address details" \
+        --add-entry="Address Line 1:" \
+        --add-entry="Address Line 2:" \
+        --add-entry="Pin Code:" \
+        --add-entry="City:" \
+        --add-entry="State:")
+    
+    if [ -z "$form_data" ]; then
+        # Cancel or close button pressed
+        exit
+    fi
+    
+    # Extract form values
+    address_line1=$(echo "$form_data" | awk -F'|' '{print $1}')
+    address_line2=$(echo "$form_data" | awk -F'|' '{print $2}')
+    pincode=$(echo "$form_data" | awk -F'|' '{print $3}')
+    city=$(echo "$form_data" | awk -F'|' '{print $4}')
+    state=$(echo "$form_data" | awk -F'|' '{print $5}')
+    
+    # Modify this section to add the address to your table
+    # For simplicity, let's assume we are displaying the added address using Zenity info dialog
+    added_address="Address Line 1: $address_line1\nAddress Line 2: $address_line2\nCity: $city\nState: $state\nPin Code: $pincode"
+    
+    zenity --info --title="Address Added" --text="$added_address"
+}
+
+# Main script
+
+# Display the table data and handle the buttons
+display_table_data
+
+
+#!/bin/bash
+
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Prem018@"
+DB_NAME="medigo"
+
+function address() {
+# Step 1: Prompt user for email ID
+email='premumar018@gmail.com'
+
+#address=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT address_line1 FROM users WHERE email = '$email'")
+account=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT * FROM users WHERE email = '$email'")
+
+# Step 2: Check if user's address is present in the users table
+address=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT address_line1 FROM users WHERE email = '$email'")
+
+#if [[ "$address" == "NULL" ]]; then
+#account=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT user_name, gender, phone_numner, email FROM users WHERE email = '$email'")
+    # Step 3: Ask user to add address
+    #zenity --info --title="User Details" --text="$account" --ok-label="Add Address"
+    zenity --question --title="User Details" --text="$account" --ok-label="Add Address"
+    #response=$(zenity --question --title="Add Address" --text="No address found. Do you want to add an address?" --ok-label="Add Address" --cancel-label="Cancel")
+    
+    if [ $? = 0 ]; then 
+        # Step 4: Display form to enter address details
+        address_data=$(zenity --forms --title="Add Address" --text="Enter address details:" \
+                        --add-entry="Address Line 1:" \
+                        --add-entry="Address Line 2:" \
+                        --add-entry="Pincode:" \
+                        --add-entry="City:" \
+                        --add-entry="State:")
+        
+        # Step 5: Store entered address details in variables
+        address_line1=$(echo "$address_data" | awk -F"|" '{ print $1 }')
+        address_line2=$(echo "$address_data" | awk -F"|" '{ print $2 }')
+        pincode=$(echo "$address_data" | awk -F"|" '{ print $3 }')
+        city=$(echo "$address_data" | awk -F"|" '{ print $4 }')
+        state=$(echo "$address_data" | awk -F"|" '{ print $5 }')
+        
+        # Step 6: Insert new address data into the users table
+        mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "UPDATE users SET address_line1='$address_line1', address_line2='$address_line2', pincode='$pincode', city='$city', state='$state' WHERE email='$email'"
+    fi
+#fi
+
+# Step 7: Retrieve user details from the users table
+user_details=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT * FROM users WHERE email = '$email'")
+
+# Step 8: Display complete user data using Zenity
+zenity --info --title="User Details" --text="$user_details"
+}
+addresss
+
+
+
+
+

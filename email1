@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Prem018@"
+DB_NAME="medigo"
+
+OTP=$(shuf -i 100000-999999 -n 1)
+echo "DO NOT SHARE: One-time Password for you Medigo registration account: $OTP" | mutt -s "Medigo - OTP Verification" premumar018@gmail.com

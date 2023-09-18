@@ -1,0 +1,247 @@
+#!/bin/bash
+
+
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Prem018@"
+DB_NAME="medigo"
+
+
+# Function to register in a seller
+function register() {
+
+while true;do
+
+# Use Zenity to create a form dialog box and get the seller's name, email, password, and phone number
+form=$(zenity --forms --title="SELLER REGISTRATION PAGE" --text="Please enter your information:" \
+        --add-entry="Enter your Name" \
+        --add-combo="Select your Gender" --combo-values="Male|Female|Prefer not to say" \
+        --add-entry=" Enter your Phone Number" \
+        --add-entry="Enter your Email" \
+        --add-password="Enter your Password" \
+        --add-password="Enter your Confirm Password" --height=400 --width=600)
+
+
+# Check if the user clicked the "Cancel" button
+	if [ $? -ne 0 ]; then
+  	    zenity --error --title="Form Cancelled" --text="Registeration failed. Please try again" --height=100 --width=300
+  	    source medigo
+	fi
+
+# Extract the values entered by the user from the result string
+seller_name=$(echo "$form" | cut -d '|' -f 1)
+gender=$(echo "$form" | cut -d '|' -f 2)
+phone_number=$(echo "$form" | cut -d '|' -f 3)
+email=$(echo "$form" | cut -d '|' -f 4)
+password=$(echo "$form" | cut -d '|' -f 5)
+confirm_password=$(echo "$form" | cut -d '|' -f 6)
+        
+       
+        if [ -z "$seller_name" ]; then
+            zenity --info --title "Resgister New SELLER" --text "Please enter your Name to proceed!" --width=100 --height=50
+            #exit 1
+        else
+        
+        if [ -z "$phone_number" ]; then
+            zenity --info --title "Resgister New SELLER" --text "Please enter your Phone Number to proceed!" --width=100 --height=50
+            #exit 1
+        else
+        
+        # Validate the phone number
+        if ! [[ $phone_number =~ ^[0-9]{10}$ ]]; then
+            zenity --error --text="Invalid phone number. Please enter a 10-digit phone number." #&& exit 1
+        else
+
+        if [ -z "$email" ]; then
+            zenity --info --title "Resgister New SELLER" --text "Please enter your Email ID to proceed!" --width=100 --height=50
+            #exit 1
+        else
+        
+        # Validate the email address
+        if ! [[ $email =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+        zenity --error --text="Invalid email address. Please enter a valid email address." #&& exit 1
+        else
+        
+        
+        if [ -z "$password" ]; then
+            zenity --info --title "Resgister New SELLER" --text "Please enter your password to proceed!" --width=100 --height=50
+            #exit 1
+        else
+        
+        if [ -z "$confirm_password" ]; then
+            zenity --info --title "Resgister New SELLER" --text "Please enter your confirm password to proceed!" --width=100 --height=50
+            #exit 1
+        else
+        
+        
+        # Hash the password
+    	hashed_password=$(echo -n "$password" | sha256sum | awk '{print $1}')
+                                  
+        if [ "$password" == "$confirm_password" ]; then
+    	    # Insert the seller credentials into the database
+    mysql -u $DB_USER -p$DB_PASS -h $DB_HOST -D $DB_NAME -e "INSERT INTO seller_credentials (seller_name, phone_number, email, password, hashed_password) VALUES ('$seller_name', '$phone_number', '$email', '$password', '$hashed_password'); INSERT INTO seller (seller_name, gender, phone_number, email) VALUES ('$seller_name', '$gender', '$phone_number', '$email')"
+    
+        #if [ $? -eq 0 ]; then
+            zenity --info --title "Resgister New SELLER" --text "Registeration successful." --width=100 --height=50
+            login
+        #else
+         #   zenity --info --title "Resgister New seller" --text "Registeration failed. Please try again"
+        #fi
+    	else
+    	    zenity --info --title "Resgister New SELLER" --text "Password do not match. Please try again." --width=100 --height=50
+    	fi
+    	fi
+    	fi
+        fi
+        fi
+        fi
+        fi
+        fi
+        done
+
+}
+
+
+
+# Function to log in a seller
+function login() {
+
+
+# Use Zenity to create a form dialog box and get the user's name, email, password, and phone number
+form=$(zenity --forms --title="SELLER LOGIN PAGE" --text="Please enter your information:" \
+        --add-entry="Enter your Email" \
+        --add-password="Enter your Password" --height=400 --width=600)
+
+# Check if the user clicked the "Cancel" button
+	if [ $? -ne 0 ]; then
+  	    zenity --error --title="Form Cancelled" --text="Login failed. Please try again" --height=100 --width=300
+  	    source medigo
+	fi
+    
+# Extract the values entered by the user from the result string
+email=$(echo "$form" | cut -d '|' -f 1)
+password=$(echo "$form" | cut -d '|' -f 2)
+
+
+    # Hash the password
+    hashed_password=$(echo -n "$password" | sha256sum | awk '{print $1}')
+
+    # Check if the email and hashed password match the database
+    result=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT email FROM seller_credentials WHERE email='$email' AND hashed_password ='$hashed_password'")
+
+    if [[ -n "$result" ]]; then
+        zenity --info --title "Login to MEDIGO" --text "Login successful!" --height=100 --width=300
+        source seller_portal
+    else
+        try_again_option=$(zenity --question --title "Login to MEDIGO" --text "Invalid email or password. Do you want to try again? " --height=100 --width=300)
+        
+        # Check if user clicked "Yes"
+        if [ $? = 0 ]; then 
+            login
+        else
+            reset_password_option=$(zenity --question --title "Login to MEDIGO" --text "Do you want to reset your password? " --height=100 --width=300)
+            if [ $? = 0 ]; then
+                reset_password
+            else    
+                zenity --error --title "Login to MEDIGO" --text "Login Failed" --height=100 --width=300
+            fi
+        fi
+    fi
+}
+
+
+
+
+# Function to reset an user's password
+function reset_password() {
+    
+    while true; do
+    
+    email=$(zenity --entry --title "Reset your Password" --text "Enter your Email Id: " --height=400 --width=600)
+    
+    # Check if the email exists in the database
+    result=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT email FROM seller_credentials WHERE email='$email'")
+
+    if [[ -n "$result" ]]; then
+    
+            # Read and confirm the new password
+            form=$(zenity --forms --title="RESET PASSWORD PAGE" --text="Please enter your information:" \
+            --add-password="Enter your New Password" \
+            --add-password="Enter your Confirm New Password" --height=400 --width=600)
+            
+            
+            password=$(echo "$form" | cut -d '|' -f 1)
+	    confirm_password=$(echo "$form" | cut -d '|' -f 2)
+            # Check if the user clicked the "Cancel" button
+    	    if [ $? -ne 0 ]; then
+  		zenity --info --title="Form Cancelled" --text="Password Reseting failed. Please try again" --width=100 --height=50
+  		break
+    	    fi
+
+	    if [ -z "$password" ]; then
+                zenity --info --title "Resgister New seller" --text "Please enter your password to proceed!" --width=100 --height=50
+            #exit 1
+            else
+        
+            if [ -z "$confirm_password" ]; then
+                zenity --info --title "Resgister New seller" --text "Please enter your confirm password to proceed!" --width=100 --height=50
+            #exit 1
+            else
+            
+	    # Hash the password and update the database
+            hashed_password=$(echo -n "$password" | sha256sum | awk '{print $1}')
+            
+            if [ "$password" == "$confirm_password" ]; then
+                mysql -u $DB_USER -p$DB_PASS -h $DB_HOST -D $DB_NAME -D $DB_NAME -e "UPDATE seller_credentials SET password='$password', hashed_password='$hashed_password' WHERE email='$email'"
+        
+                zenity --info --title "Reset your Password" --text "Password reset successful!" --height=100 --width=300
+                break
+            else
+                zenity --info --title "Reset your Password" --text "Passwords do not match. Please try again." --height=100 --width=300
+            fi
+            fi 
+    	    fi 
+    else
+        zenity --info --title "Reset your Password" --text "Invalid email. Please try again." --height=100 --width=300
+        break
+    fi
+         
+        
+
+        
+        
+    done
+}
+
+
+# Function to log out an user
+function logout() {
+
+    # Simply display a message to indicate the user has logged out
+    zenity --info --title "Logging out" --text "You have been Logged Out!" --height=100 --width=300
+    
+    seller_login
+
+}
+
+
+
+
+function main() {
+
+result=$(zenity --list --title="Login or Register?" --text="Select an option" --radiolist --column "Select" --column "Option" TRUE Login FALSE Register --height=400 --width=600)
+
+if [ "$result" = "Login" ]; then
+login
+elif [ "$result" = "Register" ]; then
+register
+else
+zenity --error --title="Error" --text="Invalid option selected" --height=100 --width=300
+fi
+
+}
+main
+
+
+

@@ -1,0 +1,180 @@
+#!/bin/bash
+
+
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Root@123"
+DB_NAME="medigo"
+
+#!/bin/bash
+
+# Function to display an error dialog
+display_error() {
+    zenity --error --text="$1" --title="Error" --height=100 --width=300
+}
+
+# Function to display an information dialog
+display_info() {
+    zenity --info --text="$1" --title="Information" --height=100 --width=300
+}
+
+# Function to prompt for user input using Zenity
+prompt_input() {
+    zenity --entry --text="$1" --title="Input" --entry-text="$2" --height=100 --width=300
+}
+
+# Function to perform the CREATE operation
+create_user() {
+
+# Use Zenity to create a form dialog box and get the user's name, email, password, and phone number
+form=$(zenity --forms --title="USER CREATION PAGE" --text="Please enter your information:" \
+        --add-entry="Enter your Name" \
+        --add-combo="Select your Gender" --combo-values="Male|Female|Prefer not to say" \
+        --add-entry=" Enter your Phone Number" \
+        --add-entry="Enter your Email" --height=400 --width=600)
+        #--add-password="Enter your Password" \
+        #--add-password="Enter your Confirm Password" --height=400 --width=600)
+        
+	# Check if the user clicked the "Cancel" button
+	if [ $? -ne 0 ]; then
+  	    zenity --error --title="Form Cancelled" --text="Creation failed. Please try again" --height=100 --width=300
+  	    main
+	fi
+	
+# Extract the values entered by the user from the result string
+user_name=$(echo "$form" | cut -d '|' -f 1)
+gender=$(echo "$form" | cut -d '|' -f 2)
+phone_number=$(echo "$form" | cut -d '|' -f 3)
+email=$(echo "$form" | cut -d '|' -f 4)
+   
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e"INSERT INTO users (user_name, gender, phone_number, email) VALUES ('$user_name', '$gender', '$phone_number', '$email');"
+
+
+
+    display_info "User created successfully!"
+    main
+    
+}
+
+# Function to perform the READ operation
+read_users() {
+    users=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "SELECT * FROM users")
+
+    display_info "Users:\n$users"
+    main
+}
+
+# Function to perform the UPDATE operation
+update_user() {
+
+
+# Prompt the user to enter a medicine name
+email=$(zenity --entry --title "UPDATE" --text "Enter the email id to update:" --height=140 --width=300)
+
+    # Check if the email is present in the database
+    result=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT email FROM users WHERE email='$email'")
+
+if [[ -n "$result" ]]; then
+# Use Zenity to create a form dialog box and get the user's name, email, password, and phone number
+form=$(zenity --forms --title="USER CREATION PAGE" --text="Please enter your information:" \
+        --add-entry="Enter your Name" \
+        --add-combo="Select your Gender" --combo-values="Male|Female|Prefer not to say" \
+        --add-entry=" Enter your Phone Number" --height=400 --width=600)
+        
+        
+	# Check if the user clicked the "Cancel" button
+	if [ $? -ne 0 ]; then
+  	    zenity --error --title="Form Cancelled" --text="Updation failed. Please try again" --height=100 --width=300
+  	    main
+	fi
+	
+# Extract the values entered by the user from the result string
+user_name=$(echo "$form" | cut -d '|' -f 1)
+gender=$(echo "$form" | cut -d '|' -f 2)
+phone_number=$(echo "$form" | cut -d '|' -f 3)
+    
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "UPDATE users SET user_name = '$user_name', gender = '$gender', phone_number = '$phone_number' WHERE email = '$email';"
+
+    display_info "User updated successfully!"
+    main
+    
+    else
+    display_info "Invalid Email loggined!"
+    main
+    fi
+}
+
+# Function to perform the DELETE operation
+delete_user() {
+    email=$(prompt_input "Enter user email to delete:")
+
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "DELETE FROM users WHERE email = '$email';"
+
+    display_info "User deleted successfully!"
+    main
+}
+read_users_cart(){
+
+  cart=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "SELECT * FROM cart")
+
+  display_info "User's cart:\n$cart"
+  main
+}
+read_users_orders(){
+
+  orders=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "SELECT * FROM order_history")
+
+  display_info "User's orders:\n$orders"
+  main
+}
+
+# Main menu
+function main() {
+choice=$(zenity --list --title="CRUD Operations" --text="Select an operation:" --radiolist \
+    --column="" --column="Operation" \
+    TRUE "Create user" \
+    FALSE "Read user" \
+    FALSE "Read user's cart" \
+    FALSE "Read user's order history" \
+    FALSE "Update" \
+    FALSE "Delete" \
+    FLASE "EXIT" \
+    --height=400 --width=600)
+
+case $choice in
+
+    "Create user")
+    
+        create_user ;;
+        
+    "Read user")
+    
+        read_users ;;
+        
+    "Read user's cart")
+    
+        read_users_cart ;;
+         
+    "Read user's order history")
+    
+        read_users_orders ;;
+              
+    "Update")
+    
+        update_user ;;
+        
+    "Delete")
+    
+        delete_user ;;
+     
+    "EXIT")
+        source admin_portal ;;
+        
+    *)
+        display_error "Invalid choice!" 
+        source admin_portal ;;
+esac
+} 
+main
+

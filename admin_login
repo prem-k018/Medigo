@@ -1,0 +1,69 @@
+#!/bin/bash
+
+
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Prem018@"
+DB_NAME="medigo"
+
+function login() {
+
+while true; do
+
+# Use Zenity to create a form dialog box and get the user's name, email, password, and phone number
+form=$(zenity --forms --title="ADMIN LOGIN PAGE" --text="Please enter your information:" \
+        --add-entry="Enter your Email" \
+        --add-password="Enter your Password" --height=400 --width=600)
+
+if [ $? -ne 0 ]; then
+    zenity --error --title="Form Cancelled" --text="Login failed. Please try again" --height=100 --width=300
+    source medigo
+fi
+    
+# Extract the values entered by the user from the result string
+email=$(echo "$form" | cut -d '|' -f 1)
+password=$(echo "$form" | cut -d '|' -f 2)
+
+if [ -z "$email" ]; then
+    zenity --error --title "Login user" --text "Please enter your Email ID to proceed!" --height=100 --width=300            
+else     
+        
+if [ -z "$password" ]; then
+            zenity --error --title "Login User" --text "Please enter your password to proceed!" --height=100 --width=300            
+else
+
+
+# Check if the email and password match the database
+result=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT email FROM admin_credentials WHERE email='$email' AND password ='$password'")
+    
+if [[ -n "$result" ]]; then
+
+    source email
+    enter_otp=$(zenity --entry --title "OTP Confirmation" --text "Enter the 6-digit OTP sent to your mail ID: " --height=170 --width=400)
+    
+    if [ "$OTP" == "$enter_otp" ]; then
+
+        zenity --notification --title "Login to ADMIN PORTAL MEDIGO" --text "Login successful!" --height=100 --width=300
+        source admin_portal
+        
+    else
+           
+        zenity --error --title "Login to ADMIN PORTAL MEDIGO" --text "Login Failed" --height=100 --width=300
+        source medigo
+    fi
+    
+else
+    
+    zenity --error --title "Login to ADMIN PORTAL MEDIGO" --text "Your Email or Password is not registered with us." --height=100 --width=300
+    source medigo
+fi
+fi
+fi
+
+done
+
+}
+
+login
+
+

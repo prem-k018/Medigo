@@ -1,0 +1,417 @@
+#!/bin/bash
+
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Prem018@"
+DB_NAME="medigo"
+
+
+# Function to display an error dialog
+display_error_dialog() {
+    local message=$1
+    zenity --error --title="Error" --text="$message" --width=300
+}
+
+# Function to fetch the state and city names based on pincode
+fetch_location_data() {
+    local pincode=$1
+    local url="https://api.postalpincode.in/pincode/$pincode"
+
+    # Send the GET request to the API
+    local response=$(curl -s "$url")
+
+    # Parse the JSON response to retrieve state and city names
+    local state=$(echo "$response" | jq -r '.[0].PostOffice[0].State')
+    local city=$(echo "$response" | jq -r '.[0].PostOffice[0].District')
+
+    echo "$state|$city"
+}
+
+function address_present() {
+    
+    # Step 3: If data exists in address line 1 field, display all records
+    user_name=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT user_name FROM users WHERE email = '$email'")
+    gender=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT gender FROM users WHERE email = '$email'")
+    phone_number=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT phone_number FROM users WHERE email = '$email'")
+    email=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT email FROM users WHERE email = '$email'")
+    address_line1=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT address_line1 FROM users WHERE email = '$email'")
+    address_line2=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT address_line2 FROM users WHERE email = '$email'")
+    pincode=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT pincode FROM users WHERE email = '$email'")
+    city=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT city FROM users WHERE email = '$email'")
+    state=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT state FROM users WHERE email = '$email'")
+    
+    edit_address=$(zenity --question --title="User Details" --text="Your Account Details are:\n\n\nName: $user_name\n\nGender: $gender\n\nPhone Number: $phone_number\n\nEmail: $email\n\nAddress Line 1: $address_line1\n\nAddress Line 2: $address_line2\n\nPin Code: $pincode\n\nCity: $city\n\nState: $state\n\nDO you want to edit your Address Details?" --ok-label="Edit Address" --height=400 --width=600)
+    
+    if [ $? = 0 ]; then 
+        address_absent
+    else
+        user_portal
+    fi
+}
+
+function address_absent() {
+    
+    
+        while true; do
+    
+        # Step 5: Display form to enter address details
+        address_data=$(zenity --forms --title="Add Address" --text="Enter address details:" \
+                        --add-entry="Address Line 1:" \
+                        --add-entry="Address Line 2:" \
+                        --add-entry="Pincode:" --height=400 --width=600)
+        
+        # Check if the user clicked the "Cancel" button
+	if [ $? -ne 0 ]; then
+  	    zenity --error --title="Form Cancelled" --text="Address Details failed. Please try again" --height=100 --width=300
+  	    break
+	fi
+	
+        # Step 6: Store entered address details in variables
+        address_line1=$(echo "$address_data" | awk -F"|" '{ print $1 }')
+        address_line2=$(echo "$address_data" | awk -F"|" '{ print $2 }')
+        pincode=$(echo "$address_data" | awk -F"|" '{ print $3 }')
+        city=$(echo "$address_data" | awk -F"|" '{ print $4 }')
+        state=$(echo "$address_data" | awk -F"|" '{ print $5 }')
+        
+        if [ -z "$address_line1" ]; then
+    	    # Dialog closed or canceled
+    	    display_error_dialog "Address details are required."
+    	    #exit 1
+	else
+	
+        if [ -z "$pincode" ]; then
+    	    # Dialog closed or canceled
+    	    display_error_dialog "Pincode is required."
+    	    #exit 1
+	else
+
+	# Validate pincode format
+	if [[ ! "$pincode" =~ ^[0-9]{6}$ ]]; then
+    	    display_error_dialog "Invalid Pincode. Please enter a 6-digit numeric pincode."
+    	    #exit 1
+	else
+
+	# Fetch location data based on the pincode
+	location_data=$(fetch_location_data "$pincode")
+	if [ -z "$location_data" ]; then
+    	    display_error_dialog "Unable to fetch location details for the given pincode."
+    	    #exit 1
+	else
+
+	# Split the location data into state and city
+	IFS='|' read -r state city <<< "$location_data"
+
+        # Step 7: Insert new address data into the users table
+        mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "UPDATE users SET address_line1='$address_line1', address_line2='$address_line2', pincode='$pincode', city='$city', state='$state' WHERE email='$email'"
+        
+	# Step 8: Retrieve user details from the users table
+        user_name=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT user_name FROM users WHERE email = '$email'")
+        gender=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT gender FROM users WHERE email = '$email'")
+    	phone_number=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT phone_number FROM users WHERE email = '$email'")
+    	email=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT email FROM users WHERE email = '$email'")
+    	
+    	# Step 9: Display complete user data using Zenity
+    	zenity --question --title="User Details" --text="Your Account Details are:\n\n\nName: $user_name\n\nGender: $gender\n\nPhone Number: $phone_number\n\nEmail: $email\n\nAddress Line 1: $address_line1\n\nAddress Line 2: $address_line2\n\nPin Code: $pincode\n\nCity: $city\n\nState: $state" --ok-label="Edit Address" --height=400 --width=600
+    	
+    	if [ $? = 0 ]; then 
+    	address_absent
+    	else
+    	user_portal
+    	fi
+    	
+        
+	break
+    	fi
+    	fi
+    	fi
+    	fi
+    done
+    user_portal
+    
+}
+
+function my_account() {
+
+# Step 1: Prompt user for email ID
+
+
+# Step 2: Check if user's address is present in the users table
+address=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT address_line1 address_line2 FROM users WHERE email = '$email'")
+
+if [ -n "$address" ] && [ "$address" != "NULL" ]; then
+    address_present 
+     
+else
+    #account=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT * FROM users WHERE email = '$email'")
+    
+    user_name=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT user_name FROM users WHERE email = '$email'")
+    gender=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT gender FROM users WHERE email = '$email'")
+    phone_number=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT phone_number FROM users WHERE email = '$email'")
+    email=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT email FROM users WHERE email = '$email'")
+    address_line1=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT address_line1 FROM users WHERE email = '$email'")
+    address_line2=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT address_line2 FROM users WHERE email = '$email'")
+    pincode=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT pincode FROM users WHERE email = '$email'")
+    city=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT city FROM users WHERE email = '$email'")
+    state=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT state FROM users WHERE email = '$email'")
+    
+    # Step 4: Ask user to add address
+    add_address=$(zenity --question --title="User Details" --text="Your Account Details are:\n\nName: $user_name\n\nGender: $gender\n\nPhone Number: $phone_number\n\nEmail: $email\n\nAddress Line 1: ____________\n\nAddress Line 2: ____________\n\nPin Code: ____________\n\nCity: ____________\n\nState: ____________\n\nYour address is not present. Do you want to add your address?" --ok-label="Add Address" --height=400 --width=600)
+    
+    if [ $? = 0 ]; then 
+        address_absent
+    else
+        user_portal
+    fi
+fi
+
+}
+
+
+
+#Function to search the medicine and add_to_cart
+function search_medicine() {
+
+# Prompt the user to enter a medicine name
+medicine=$(zenity --entry --title "Search Medicine" --text "Enter the medicine name:" --height=120 --width=300)
+
+# Search for the medicine in the database
+query="SELECT medicine_name, price, manufacture_date, expiry_date, stock FROM medicines WHERE medicine_name LIKE '%$medicine%'"
+result=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "$query")
+
+
+# Display the search result to the user
+if [ -z "$result" ]; then
+    zenity --info --text "No results found for '$medicine'"
+    user_portal
+else
+selected_med=$(echo "$result" | zenity --list --column="Medicine" --title="Select Medicine" --text="Select a medicine:" --height=500 --width=900)
+
+# If the user selected a medicine, show its details and add it to the cart
+if [ -n "$selected_med" ]; then
+  med_name=$(echo "$selected_med" | awk '{print $1}')
+  med_price=$(echo "$selected_med" | awk '{print $2}')
+  med_mnf=$(echo "$selected_med" | awk '{print $3}')
+  med_expiry=$(echo "$selected_med" | awk '{print $4}')
+  #med_desc=$(echo "$selected_med" | awk '{print $5}')
+  med_stock=$(echo "$selected_med" | awk '{print $5}')
+
+  add_to_cart=$(zenity --question --title="Add to Cart" --text="Do you want to Add '$med_name' to cart for $med_price?" --height=100 --width=300)
+  # Check if user clicked "Yes"
+  if [ $? = 0 ]; then 
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "INSERT INTO cart (email, medicine_name, price, manufacture_date, expiry_date, stock) VALUES ('$email', '$med_name', '$med_price', '$med_mnf', '$med_expiry', '$med_stock');"
+    zenity --info --title="Added to Cart" --text="'$med_name' added to cart." --height=100 --width=300
+    user_portal
+  fi
+fi
+fi
+
+}
+
+
+function go_to_cart() {
+
+# Get the list of medicines in the cart from the database
+cart_med_list=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "SELECT medicine_name, price, manufacture_date, expiry_date, stock FROM cart where email = '$email'")
+
+# Show a dialog with the list of medicines in the cart and allow the user to select one
+selected_med=$(echo "$cart_med_list" | zenity --list --title="Cart" --column="Medicine" --text="Select a medicine from cart:" --ok-label="Place Order" --height=500 --width=700)
+
+# Check if the user clicked the "Cancel" button
+	if [ $? -ne 0 ]; then
+  	    zenity --error --title="Form Cancelled" --text="Order Placing faild. Please try again" --height=100 --width=300
+  	    user_portal
+	fi
+	
+# If the user selected a medicine, ask for the quantity and calculate the price
+if [ -n "$selected_med" ]; then
+  med_name=$(echo "$selected_med" | awk '{print $1}')
+  med_price=$(echo "$selected_med" | awk '{print $2}')
+  med_mnf=$(echo "$selected_med" | awk '{print $3}')
+  med_expiry=$(echo "$selected_med" | awk '{print $4}')
+  #med_desc=$(echo "$selected_med" | awk '{print $5}')
+  med_stock=$(echo "$selected_med" | awk '{print $5}')
+  
+  quantity=$(zenity --entry --title="Quantity" --text="Enter quantity for '$med_name':" --entry-text="1" --height=100 --width=300)
+
+  # Calculate the total price based on the quantity
+  total_price=$(echo "$med_price * $quantity" | bc)
+
+  order_msg="You are about to order:\n\nMedicine: $med_name\nQuantity: $quantity\nPrice: $med_price * $quantity = $total_price\n\nDo you want to place the order?"
+  place_order=$(zenity --question --title="Place Order" --text="$order_msg" --ok-label="Place Order" --width=250 --height=100)
+
+  # If the user confirms the order, generate an order ID, insert the order details into the "order history" table in the database, and show a confirmation message
+  # Check if user clicked "Yes"
+  if [ $? = 0 ]; then
+  
+  # Step 2: Check if user's address is present in the users table
+  address=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT address_line1 address_line2 FROM users WHERE email = '$email'")
+
+  order_date=$(date +%Y%m%d)
+  if [ -n "$address" ] && [ "$address" != "NULL" ]; then
+    # Generate an order ID using the current date and time
+    order_id=$(date +%Y%m%d%H%M%S)
+    
+    # Insert the order details into the "order history" table in the database
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "INSERT INTO order_history (email, order_id, medicine_name, quantity, total_price, order_date) VALUES ('$email', '$order_id', '$med_name', '$quantity', '$total_price', '$order_date');"
+
+    # Remove the medicine from the cart
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "DELETE FROM cart WHERE medicine_name='$med_name' and email='$email';"
+
+    zenity --info --title="Order Placed" --text="Order placed for '$med_name' \n\n(Quantity: $quantity, Price: $total_price).\n\nOrder ID: $order_id\n\nOrder Date: $order_date" --height=100 --width=300
+    
+    
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "UPDATE medicines SET stock = stock - $quantity where medicine_name = '$med_name'"
+    source order_detail_email
+    source user_portal
+  else
+    zenity --info --title="Order Placed" --text="Add your Address first to place the order!" --height=100 --width=300
+    user_portal
+  fi
+  else
+      user_portal
+  fi
+fi
+
+}
+
+# Function to reset an user's password
+function reset_password() {
+    
+    while true; do
+    
+    email=$(zenity --entry --title "Reset your Password" --text "Enter your Email Id: " --height=400 --width=600)
+    
+    # Check if the email exists in the database
+    result=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT email FROM user_credentials WHERE email='$email'")
+
+    if [[ -n "$result" ]]; then
+    	    
+    	    source email
+            # Read and confirm the new password
+            form=$(zenity --forms --title="RESET PASSWORD PAGE" --text="Please enter your information:" \
+            --add-password="Enter the OTP" \
+            --add-password="Enter your New Password" \
+            --add-password="Enter your Confirm New Password" --height=400 --width=600)
+            
+            entered_otp=$(echo "$form" | cut -d '|' -f 1)
+            password=$(echo "$form" | cut -d '|' -f 2)
+	    confirm_password=$(echo "$form" | cut -d '|' -f 3)
+            # Check if the user clicked the "Cancel" button
+    	    if [ $? -ne 0 ]; then
+  		zenity --info --title="Form Cancelled" --text="Password Reseting failed. Please try again" --height=100 --width=300
+  		break
+    	    fi
+
+	    if [ -z "$password" ]; then
+                zenity --info --title "Resgister New User" --text "Please enter your password to proceed!" --height=100 --width=300
+            #exit 1
+            else
+        
+            if [ -z "$confirm_password" ]; then
+                zenity --info --title "Resgister New user" --text "Please enter your confirm password to proceed!" --height=100 --width=300
+            #exit 1
+            else
+            
+	    # Hash the password and update the database
+            hashed_password=$(echo -n "$password" | sha256sum | awk '{print $1}')
+            
+            if [ "$entered_otp" == "$OTP" ]; then
+                mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "UPDATE user_credentials SET password='$password', hashed_password='$hashed_password' WHERE email='$email'"
+        
+                zenity --notification --title "Reset your Password" --text "Password reset successful!"
+                break
+            else
+                zenity --error --title "Reset your Password" --text "OTP do not match. Please try again." --height=100 --width=300
+            fi
+            fi 
+    	    fi 
+    else
+        zenity --error --title "Reset your Password" --text "Invalid email. Please try again." --height=100 --width=300
+        break
+    fi  
+        
+    done
+}
+
+
+#Function to see order history
+function order_history() {
+
+    result=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT * FROM order_history WHERE email='$email'")
+
+    if [[ -n "$result" ]]; then
+        zenity --info --title "ORDER HISTORY" --text "Your Order Histories are:\n\n$result" --height=100 --width=300
+        user_portal
+    else
+        zenity --notification --title "ORDER HISTORY" --text "You have no Order History" --height=100 --width=300
+        user_portal
+    fi
+}
+
+
+#Function to contact_us
+
+function contact_us() {
+
+# Prompt the user for email and contact information using a Zenity text entry dialog
+form_data=$(zenity --text-info --title "Contact Us Form" --editable --width 600 --height 400 --text "Enter your email and contact information:")
+
+# Extract the email and contact information from the form data
+email=$(echo "$form_data" | grep -m 1 -oP '.*(?=\\n)')
+contact_info=$(echo "$form_data" | grep -oP '(?<=\\n).*')
+
+if [ -z "$contact_info" ]; then
+    user_portal
+else
+# Display the captured information in a dialog
+    zenity --info --title "Contact Us Form" --text "Email: $email\nContact Information:\n$contact_info"
+fi 
+
+}
+
+
+# Function to log out an user
+function logout() {
+
+    # Simply display a message to indicate the user has logged out
+    zenity --info --title "Logging out" --text "You have been Logged Out!" --height=100 --width=300
+    
+    source user_login
+
+}
+
+
+function user_portal() {
+
+choice=$(zenity --list --title="Welcome to MEDIGO" --text="User Portal Functions" --column="Portals" 'MY ACCOUNT' 'SEARCH MEDICINE' 'GO TO CART' 'RESET PASSWORD' 'ORDER HISTORY' 'CONTACT US' 'LOG OUT' --width=600 --height=400)
+
+# Check if the user clicked the "Cancel" button
+	if [ $? -ne 0 ]; then
+  	    zenity --error --title="Form Cancelled" --text="Registeration failed. Please try again" --height=100 --width=300
+  	    source medigo
+	fi
+
+case $choice in
+
+    'MY ACCOUNT') my_account ;;
+
+    'SEARCH MEDICINE') search_medicine ;;
+
+    'GO TO CART') go_to_cart ;;
+    
+    'RESET PASSWORD') reset_password ;;
+    
+    'ORDER HISTORY') order_history ;;
+    
+    'CONTACT US') contact_us ;;
+
+    'LOG OUT') logout ;;
+
+    *) 
+	 zenity --info --title="Welcome to MEDIGO" --error "Invalid Choice. Please Try Again!" --width=100 --height=50
+
+esac
+
+}
+user_portal

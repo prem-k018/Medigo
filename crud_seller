@@ -1,0 +1,125 @@
+#!/bin/bash
+
+
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Root@123"
+DB_NAME="medigo"
+
+#!/bin/bash
+
+# Function to display an error dialog
+display_error() {
+    zenity --error --text="$1" --title="Error" --height=100 --width=300
+}
+
+# Function to display an information dialog
+display_info() {
+    zenity --info --text="$1" --title="Information" --height=100 --width=300
+}
+
+# Function to prompt for seller input using Zenity
+prompt_input() {
+    zenity --entry --text="$1" --title="Input" --entry-text="$2" --height=100 --width=300
+}
+
+# Function to perform the CREATE operation
+add_medicines() {
+
+    form=$(zenity --forms --title="ADD MEDICINE" --text="Please enter your information:" \
+        --add-entry="Enter the Medicine Name" \
+        --add-entry="Select the Medicine Price" \
+        --add-calendar=" Enter your Manufacture Date" \
+        --add-calendar="Enter your Expiry Date" \
+        --add-entry="Enter the no of Stock" --height=400 --width=600)
+        
+    # Check if the user clicked the "Cancel" button
+	if [ $? -ne 0 ]; then
+  	    zenity --error --title="Form Cancelled" --text="Addition of Medicines failed. Please try again" --height=100 --width=300
+  	    main
+	fi
+        
+  med_name=$(echo "$form" | awk '{print $1}')
+  med_price=$(echo "$form" | awk '{print $2}')
+  med_mnf=$(echo "$form" | awk '{print $3}')
+  med_expiry=$(echo "$form" | awk '{print $4}')
+  med_stock=$(echo "$form" | awk '{print $5}')
+  
+        
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "INSERT INTO medicines (medicine_name, price, manufacture_date, expiry_date, stock) VALUES ('$med_name', '$med_price', '$med_mnf', '$med_expiry', '$med_stock');"
+
+    display_info "Medicines added successfully!"
+    main
+}
+
+
+# Function to perform the UPDATE operation
+update_medicines() {
+    medicine_name=$(prompt_input "Enter medicines name:")
+    stock=$(prompt_input "Enter stocks:")
+
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "UPDATE medicines SET stock = $stock WHERE medicine_name = '$medicine_name';"
+
+    display_info "Medicine updated successfully!"
+    main
+}
+
+# Function to perform the DELETE operation
+delete_medicines() {
+    medicine_name=$(prompt_input "Enter medicines name:")
+
+    mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "DELETE FROM medicines WHERE medicine_name = '$medicine_name';"
+
+    display_info "Medicines deleted successfully!"
+    main
+}
+
+read_medicines(){
+
+  result=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "SELECT * FROM medicines")
+  medicines=$(echo "$result" | zenity --list --column="Medicine" --title="Select Medicine" --text="Select a medicine:" --height=500 --width=900)
+  #orders=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "SELECT * FROM medicines")
+
+  #display_info "Medicines:\n$orders"
+  main
+  
+}
+
+
+# Main menu
+function main() {
+
+choice=$(zenity --list --title="CRUD Operations" --text="Select an operation:" --radiolist \
+    --column="" --column="Operation" \
+    TRUE "Add Medicines" \
+    FALSE "Read Medicines" \
+    FALSE "Update medicines Stock" \
+    FALSE "Delete Medicines" \
+    FALSE "EXIT" \
+    --height=400 --width=600)
+
+case $choice in
+    "Add Medicines")
+        add_medicines
+        ;;
+    "Read Medicines")
+        read_medicines
+        ;;
+    "Update medicines Stock")
+        update_medicines
+        ;;
+    "Delete Medicines")
+        delete_medicines
+        ;;
+    "EXIT")
+        source admin_portal
+        ;;
+    *)
+        display_error "Invalid choice!"
+        source admin_portal
+        ;;
+esac
+}
+main
+

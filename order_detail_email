@@ -1,0 +1,65 @@
+#!/bin/bash
+
+#zenity --info --title="Order Placed" --text="Order placed for '$med_name' (Quantity: $quantity, Price: $total_price).\nOrder ID: $order_id"
+#order_id=1234567
+order_date=$(date +%Y-%m-%d)
+delivery_date=$(date -d "+5 days" +%Y-%m-%d)
+addres=$(mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -se "SELECT concat(address_line1,', ', address_line2,', ',city,', ',state,'-',pincode) from users where email='$email'")
+
+echo "
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Order Confirmation</title>
+</head>
+<body>
+  <h1>Order Confirmation</h1>
+  <p>Dear Customer,</p>
+  
+  <p>We are pleased to inform you that your medicine order has been successfully placed. Below are the details of your order:</p>
+
+  <table border='1'>
+    <tr>
+      <th>Order ID:</th>
+      <td>$order_id</td>
+    </tr>
+    <tr>
+      <th>Medicine Name:</th>
+      <td>$med_name</td>
+    </tr>
+    <tr>
+      <th>Quantity:</th>
+      <td>$quantity pieces</td>
+    </tr>
+    <tr>
+      <th>Delivery Address:</th>
+      <td>$addres</td>
+    </tr>
+    <tr>
+      <th>Price:</th>
+      <td>$total_price</td>
+    </tr>
+    <tr>
+      <th>Order Date:</th>
+      <td>$order_date</td>
+    </tr>
+    <tr>
+      <th>Delivery Date:</th>
+      <td>$delivery_date</td>
+    </tr>
+  </table>
+
+  <p>We will process your order and ensure that it is delivered to you on time. If you have any questions or need further assistance, please feel free to contact our customer support team.</p>
+
+  <p>Thank you for choosing our services!</p>
+
+  <p>Sincerely,</p>
+  <p>The Medicine Store Team</p>
+</body>
+</html>
+
+">mail.html
+
+#echo "Hii, $user_name ,\nYour order has been successfully placed./nOrder Placed on " | mutt -s "Your order has been placed successly" paawan.malhotra@gmail.com
+#cat mail.html | mutt -s "Your order has been placed successly" 
+mutt -e "set content_type=text/html" $email -s "Your order has been placed successly" < mail.html

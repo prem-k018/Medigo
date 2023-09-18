@@ -1,0 +1,81 @@
+#!/bin/bash
+
+
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Root@123"
+DB_NAME="medigo"
+
+
+function user_detail() {
+   
+    #zenity --info --title "Showing user detail" --text "" --height=200 --width=600
+    source crud_user
+    
+}
+
+function seller_detail() {
+#zenity --info --title "Showing user detail" --text "Here are the Seller Details" --height=200 --width=600
+    
+   source crud_seller
+}
+
+
+function logout() {
+
+    # Simply display a message to indicate the user has logged out
+    zenity --notification --title "Logging out to MEDIGO" --text "Logout successful!" --height=100 --width=300
+    
+    source admin_login
+
+}
+
+
+function revenue_report() {
+
+#!/bin/bash
+# Set database connection parameters
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASS="Prem018@"
+DB_NAME="medigo"
+# Get the MySQL table data and save it to a file
+#!/bin/basha
+
+# Execute the SQL query and store the result in a variable
+result=$( mysql --defaults-file=/home/prem/.my.cnf -D $DB_NAME -e "SELECT DATE_FORMAT(order_date, '%Y-%m') AS month, SUM(total_price) AS revenue FROM order_history GROUP BY month ORDER BY month")
+
+# Display the report in the terminal
+zenity --info --title="Welcome to MEDIGO" --text="$result" --height=100 --width=300
+source admin_portal
+
+}
+function admin_portal() {
+
+choice=$(zenity --list --title="Welcome to MEDIGO" --text="admin Portal Functions" --column="Portals" 'USER DETAIL' 'SELLER DETAIL' 'REVENUE REPORT' 'LOG OUT' --width=600 --height=400)
+
+# Check if the user clicked the "Cancel" button
+	if [ $? -ne 0 ]; then
+  	    zenity --error --title="Form Cancelled" --text="Registeration failed. Please try again" --height=100 --width=300
+  	    main
+	fi
+	
+case $choice in
+
+    'USER DETAIL') user_detail ;;
+
+    'SELLER DETAIL') seller_detail ;;
+
+    'REVENUE REPORT') revenue_report ;;
+
+    'LOG OUT') logout ;;
+
+    *) 
+	 zenity --info --title="Welcome to MEDIGO" --error "Invalid Choice. Please Try Again!" --width=100 --height=100
+
+esac
+
+}
+admin_portal
+
